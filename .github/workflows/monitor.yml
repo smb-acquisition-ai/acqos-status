@@ -1,0 +1,93 @@
+name: Monitor
+
+on:
+  schedule:
+    # Every 3 hours at :17, away from the top-of-hour scheduling peak.
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'check = normal run; synthetic-test = simulated outage and recovery against a local stub (opens and closes a [Test] issue)'
+        type: choice
+        options: [check, synthetic-test]
+        default: check
+
+permissions:
+  contents: write   # record status data
+  issues: write     # incidents and alerts
+  pages: write
+  id-token: write
+
+concurrency:
+  group: acqos-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Self-test
+        run: python3 -m unittest monitor.test_monitor > /dev/null
+
+      - name: Check ACQOS
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACQOS_HEALTH_URL: ${{ secrets.ACQOS_HEALTH_URL }}
+          ACQOS_MONITOR_CF_CLIENT_ID: ${{ secrets.ACQOS_MONITOR_CF_CLIENT_ID }}
+          ACQOS_MONITOR_CF_CLIENT_SECRET: ${{ secrets.ACQOS_MONITOR_CF_CLIENT_SECRET }}
+          ACQOS_MONITOR_TOKEN: ${{ secrets.ACQOS_MONITOR_TOKEN }}
+        run: python3 monitor/run.py --data data --out _site
+
+      - name: Record status data
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data
+          git diff --cached --quiet && exit 0
+          git commit -q -m 'Record monitoring run'
+          for attempt in 1 2 3; do
+            git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        if: github.event_name == 'schedule' || inputs.mode == 'check'
+
+      - name: Synthetic outage and recovery
+        if: inputs.mode == 'synthetic-test'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACQOS_MONITOR_TEST: 'true'
+          ACQOS_ACCESS_SUFFIX: localhost
+          ACQOS_SITE_URL: http://127.0.0.1:8765/
+          ACQOS_HEALTH_URL: http://127.0.0.1:8765/agent-api/health
+          ACQOS_MONITOR_CF_CLIENT_ID: cf-id
+          ACQOS_MONITOR_CF_CLIENT_SECRET: cf-secret
+        run: |
+          export ACQOS_MONITOR_TOKEN="$(python3 -c 'import sys; sys.path.insert(0,"monitor"); import stub_origin; print(stub_origin.TOKEN)')"
+          python3 monitor/stub_origin.py --port 8765 & sleep 1
+          synthetic() {
+            python3 monitor/run.py --data "$RUNNER_TEMP/synthetic" --out "$RUNNER_TEMP/site" \
+              --no-certificate --title-prefix '[Test] '
+          }
+          synthetic
+          curl -sS -X POST http://127.0.0.1:8765/__mode/tunnel_down
+          synthetic   # opens a [Test] outage issue -> alert email
+          curl -sS -X POST http://127.0.0.1:8765/__mode/healthy
+          synthetic   # comments and closes it -> recovery email

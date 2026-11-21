@@ -43,6 +43,7 @@ jobs:
           ACQOS_MONITOR_CF_CLIENT_ID: ${{ secrets.ACQOS_MONITOR_CF_CLIENT_ID }}
           ACQOS_MONITOR_CF_CLIENT_SECRET: ${{ secrets.ACQOS_MONITOR_CF_CLIENT_SECRET }}
           ACQOS_MONITOR_TOKEN: ${{ secrets.ACQOS_MONITOR_TOKEN }}
+          ACQOS_ALERT_FAILURE_FILE: ${{ runner.temp }}/alert-failed
         run: python3 monitor/run.py --data data --out _site
 
       - name: Record status data
@@ -79,6 +80,7 @@ jobs:
           ACQOS_HEALTH_URL: http://127.0.0.1:8765/agent-api/health
           ACQOS_MONITOR_CF_CLIENT_ID: cf-id
           ACQOS_MONITOR_CF_CLIENT_SECRET: cf-secret
+          ACQOS_ALERT_FAILURE_FILE: ${{ runner.temp }}/alert-failed
         run: |
           export ACQOS_MONITOR_TOKEN="$(python3 -c 'import sys; sys.path.insert(0,"monitor"); import stub_origin; print(stub_origin.TOKEN)')"
           python3 monitor/stub_origin.py --port 8765 & sleep 1
@@ -91,3 +93,11 @@ jobs:
           synthetic   # opens a [Test] outage issue -> alert email
           curl -sS -X POST http://127.0.0.1:8765/__mode/healthy
           synthetic   # comments and closes it -> recovery email
+
+      - name: Alerts delivered
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/alert-failed" ]; then
+            echo "::error::Status was published, but alert issues could not be created. Check that Issues are enabled."
+            exit 1
+          fi

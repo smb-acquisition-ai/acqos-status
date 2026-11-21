@@ -162,11 +162,32 @@ class RunTests(StubCase):
 
     def test_monitoring_gap_is_recorded_without_inventing_samples(self):
         self.run_once()
-        status = self.run_once(hours=10)
+        self.run_once(hours=9)  # normal GitHub scheduling delay: not a gap
+        self.assertEqual(self.titles(), [])
+        status = self.run_once(hours=13)
         self.assertEqual(len(status['gaps']), 1)
-        self.assertIn('Monitoring gap: no checks for 10 hours', self.titles('closed'))
+        self.assertIn('Monitoring gap: no checks for 13 hours', self.titles('closed'))
         history = (self.dir / 'data' / 'history.jsonl').read_text().splitlines()
-        self.assertEqual(len(history), 2)
+        self.assertEqual(len(history), 3)
+
+    def test_issue_failures_never_block_the_page(self):
+        class Broken(issues.MemoryStore):
+            def open_incident(self, *args, **kwargs):
+                raise OSError('HTTP Error 410: Gone')
+
+            def published(self):
+                raise OSError('HTTP Error 410: Gone')
+        self.store = Broken(log=lambda *_: None)
+        marker = self.dir / 'alert-failed'
+        self.run_once()
+        self.stub.mode = 'tunnel_down'
+        with patch.dict('os.environ', {'ACQOS_ALERT_FAILURE_FILE': str(marker)}):
+            status = self.run_once(hours=20)
+        self.assertEqual(status['overall'], 'outage')
+        self.assertTrue((self.dir / 'site' / 'index.html').is_file())
+        self.assertTrue(marker.is_file())
+        state = json.loads((self.dir / 'data' / 'state.json').read_text())
+        self.assertEqual(state['open_incidents'], {})  # retried on the next run
 
     def test_maintenance_window_suppresses_incident(self):
         start = (self.clock_value + timedelta(hours=2)).isoformat().replace('+00:00', 'Z')
@@ -212,7 +233,7 @@ class RunTests(StubCase):
         self.stub.mode = 'db_down'
         self.run_once()
         html = (self.dir / 'site' / 'index.html').read_text()
-        self.assertIn('data-stale-hours="7"', html)
+        self.assertIn('data-stale-hours="12"', html)
         self.assertIn('Partnership database', html)
         self.assertIn('>Outage<', html)
         self.assertIn('Agent worker', html)  # listed under Not monitored, not as healthy

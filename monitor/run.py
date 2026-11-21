@@ -25,7 +25,9 @@ import issues as issue_store  # noqa: E402
 import render  # noqa: E402
 
 INTERVAL_HOURS = 3
-STALE_HOURS = 7
+# GitHub runs the 3-hourly schedule only every ~6-9 hours in practice
+# (observed November 19-21, 2026), so stale and gap limits allow for that.
+STALE_HOURS = 12
 RETENTION_DAYS = 90
 RETRY_DELAYS = (30, 60)
 RECOVERY_DELAY = 30
@@ -161,6 +163,33 @@ def write_history(path, lines):
     Path(path).write_text(''.join(json.dumps(line, sort_keys=True) + '\n' for line in lines))
 
 
+class SafeStore:
+    """Alerts are best effort: a GitHub Issues failure never stops the page update.
+
+    Failures are counted; the workflow then fails after publishing, so GitHub
+    still emails the workflow failure.
+    """
+    def __init__(self, store, fallback, log):
+        self.store, self.fallback, self.log, self.failed = store, fallback, log, 0
+
+    def _guard(self, action, default, *args, **kwargs):
+        try:
+            return getattr(self.store, action)(*args, **kwargs)
+        except Exception as error:  # noqa: BLE001 - only the error type is logged
+            self.failed += 1
+            self.log('issue action failed: %s (%s)' % (action, type(error).__name__))
+            return default
+
+    def open_incident(self, *args, **kwargs):
+        return self._guard('open_incident', None, *args, **kwargs)
+
+    def resolve(self, *args, **kwargs):
+        return self._guard('resolve', False, *args, **kwargs) is not False
+
+    def published(self):
+        return self._guard('published', self.fallback)
+
+
 def sync_incidents(store, state, results, active_maintenance, at, log):
     """Open an issue per component outage; comment and close on recovery."""
     open_auto = state.setdefault('open_incidents', {})
@@ -174,12 +203,13 @@ def sync_incidents(store, state, results, active_maintenance, at, log):
                 'Outage: %s' % COMPONENTS[name],
                 'The monitor detected an outage and will post here when it recovers.\n\nComponents: %s'
                 % name, ['incident', 'auto'])
-            open_auto[name] = number
-            log('incident opened for %s' % name)
+            if number is not None:
+                open_auto[name] = number
+                log('incident opened for %s' % name)
         elif result.state == OPERATIONAL and number is not None:
-            store.resolve(number, 'Recovered. %s is operational as of %s.' % (COMPONENTS[name], iso(at)))
-            del open_auto[name]
-            log('incident resolved for %s' % name)
+            if store.resolve(number, 'Recovered. %s is operational as of %s.' % (COMPONENTS[name], iso(at))):
+                del open_auto[name]
+                log('incident resolved for %s' % name)
     # Monitoring identity problems: one internal issue, never an outage.
     auth = results.get('application')
     auth_failed = auth is not None and auth.reason in ('auth_rejected_edge', 'auth_rejected_app', 'edge_blocked')
@@ -194,8 +224,8 @@ def sync_incidents(store, state, results, active_maintenance, at, log):
             ['monitoring'])
         log('monitoring authentication issue opened')
     elif not auth_failed and number is not None and auth is not None and auth.state != UNKNOWN:
-        store.resolve(number, 'Monitoring credential accepted again as of %s.' % iso(at))
-        state['open_monitoring_auth'] = None
+        if store.resolve(number, 'Monitoring credential accepted again as of %s.' % iso(at)):
+            state['open_monitoring_auth'] = None
         log('monitoring authentication issue resolved')
 
 
@@ -232,6 +262,8 @@ def main(argv=None, sleep=time.sleep, probe=checks.run_checks, store=None, clock
               'access_suffix': os.environ.get('ACQOS_ACCESS_SUFFIX') if os.environ.get('ACQOS_MONITOR_TEST') == 'true' else None}
     log = lambda message: print('[monitor] ' + message, flush=True)  # noqa: E731
     store = store or issue_store.from_environment(prefix=args.title_prefix, log=log)
+    empty = {'incidents': [], 'maintenance': [], 'pastMaintenance': []}
+    store = SafeStore(store, load_json(data / 'incidents.json', empty), log)
 
     state = load_json(data / 'state.json', {})
     previous_status = load_json(data / 'status.json', {})
@@ -280,6 +312,11 @@ def main(argv=None, sleep=time.sleep, probe=checks.run_checks, store=None, clock
     write_history(data / 'history.jsonl', history)
     render.build(status, published, Path(args.static), Path(args.out), data)
     log('overall: %s' % status['overall'])
+    if store.failed:
+        marker = os.environ.get('ACQOS_ALERT_FAILURE_FILE')
+        if marker:
+            Path(marker).write_text('%d\n' % store.failed)
+        log('alerts could not be delivered: %d issue action(s) failed' % store.failed)
     return status
 
 

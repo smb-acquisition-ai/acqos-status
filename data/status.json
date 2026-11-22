@@ -1,21 +1,21 @@
 {
  "components": {
   "access": {
-   "checkedAt": "2026-11-22T11:41:17Z",
+   "checkedAt": "2026-11-22T19:52:09Z",
    "name": "Sign-in (Cloudflare Access)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 7,
-    "percent": null
+    "checks": 8,
+    "percent": 100.0
    },
    "uptime90": {
-    "checks": 7,
-    "percent": null
+    "checks": 8,
+    "percent": 100.0
    }
   },
   "application": {
-   "checkedAt": "2026-11-22T11:41:17Z",
+   "checkedAt": "2026-11-22T19:52:09Z",
    "name": "Acquisition OS application",
    "note": "Not monitored yet.",
    "state": "unknown",
@@ -29,7 +29,7 @@
    }
   },
   "database": {
-   "checkedAt": "2026-11-22T11:41:17Z",
+   "checkedAt": "2026-11-22T19:52:09Z",
    "name": "Partnership database",
    "note": "Not verified while the application is unavailable.",
    "state": "unknown",
@@ -43,7 +43,7 @@
    }
   },
   "directory": {
-   "checkedAt": "2026-11-22T11:41:17Z",
+   "checkedAt": "2026-11-22T19:52:09Z",
    "name": "Company directory",
    "note": "Not verified while the application is unavailable.",
    "state": "unknown",
@@ -57,17 +57,17 @@
    }
   },
   "website": {
-   "checkedAt": "2026-11-22T11:41:17Z",
+   "checkedAt": "2026-11-22T19:52:09Z",
    "name": "Website (jgdesk.com)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 7,
-    "percent": null
+    "checks": 8,
+    "percent": 100.0
    },
    "uptime90": {
-    "checks": 7,
-    "percent": null
+    "checks": 8,
+    "percent": 100.0
    }
   }
  },
@@ -81,7 +81,7 @@
    "to": "2026-11-21T18:50:12Z"
   }
  ],
- "generatedAt": "2026-11-22T11:41:17Z",
+ "generatedAt": "2026-11-22T19:52:09Z",
  "intervalHours": 3,
  "notMonitored": [
   "Agent worker"

@@ -1,72 +1,58 @@
 {
  "components": {
   "access": {
-   "checkedAt": "2026-11-25T04:19:55Z",
+   "checkedAt": "2026-11-25T04:21:15Z",
    "name": "Sign-in (Cloudflare Access)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 16,
+    "checks": 17,
     "percent": 100.0
    },
    "uptime90": {
-    "checks": 16,
+    "checks": 17,
     "percent": 100.0
    }
   },
   "application": {
-   "checkedAt": "2026-11-25T04:19:55Z",
+   "checkedAt": "2026-11-25T04:21:15Z",
    "name": "Acquisition OS application",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 2,
+    "checks": 3,
     "percent": null
    },
    "uptime90": {
-    "checks": 2,
+    "checks": 3,
     "percent": null
    }
   },
   "database": {
-   "checkedAt": "2026-11-25T04:19:55Z",
+   "checkedAt": "2026-11-25T04:21:15Z",
    "name": "Partnership database",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 2,
+    "checks": 3,
     "percent": null
    },
    "uptime90": {
-    "checks": 2,
-    "percent": null
-   }
-  },
-  "directory": {
-   "checkedAt": "2026-11-25T04:19:55Z",
-   "name": "Company directory",
-   "note": "",
-   "state": "operational",
-   "uptime30": {
-    "checks": 2,
-    "percent": null
-   },
-   "uptime90": {
-    "checks": 2,
+    "checks": 3,
     "percent": null
    }
   },
   "website": {
-   "checkedAt": "2026-11-25T04:19:55Z",
+   "checkedAt": "2026-11-25T04:21:15Z",
    "name": "Website (jgdesk.com)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 16,
+    "checks": 17,
     "percent": 100.0
    },
    "uptime90": {
-    "checks": 16,
+    "checks": 17,
     "percent": 100.0
    }
   }
@@ -85,9 +71,10 @@
    "to": "2026-11-24T02:19:35Z"
   }
  ],
- "generatedAt": "2026-11-25T04:19:55Z",
+ "generatedAt": "2026-11-25T04:21:15Z",
  "intervalHours": 3,
  "notMonitored": [
+  "Company directory",
   "Agent worker"
  ],
  "overall": "operational",

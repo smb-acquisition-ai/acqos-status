@@ -1,72 +1,72 @@
 {
  "components": {
   "access": {
-   "checkedAt": "2026-11-24T23:58:43Z",
+   "checkedAt": "2026-11-25T04:18:38Z",
    "name": "Sign-in (Cloudflare Access)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 14,
+    "checks": 15,
     "percent": 100.0
    },
    "uptime90": {
-    "checks": 14,
+    "checks": 15,
     "percent": 100.0
    }
   },
   "application": {
-   "checkedAt": "2026-11-24T23:58:43Z",
+   "checkedAt": "2026-11-25T04:18:38Z",
    "name": "Acquisition OS application",
-   "note": "Not monitored yet.",
-   "state": "unknown",
+   "note": "",
+   "state": "operational",
    "uptime30": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    },
    "uptime90": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    }
   },
   "database": {
-   "checkedAt": "2026-11-24T23:58:43Z",
+   "checkedAt": "2026-11-25T04:18:38Z",
    "name": "Partnership database",
-   "note": "Not verified while the application is unavailable.",
-   "state": "unknown",
+   "note": "",
+   "state": "operational",
    "uptime30": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    },
    "uptime90": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    }
   },
   "directory": {
-   "checkedAt": "2026-11-24T23:58:43Z",
+   "checkedAt": "2026-11-25T04:18:38Z",
    "name": "Company directory",
-   "note": "Not verified while the application is unavailable.",
-   "state": "unknown",
+   "note": "",
+   "state": "operational",
    "uptime30": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    },
    "uptime90": {
-    "checks": 0,
+    "checks": 1,
     "percent": null
    }
   },
   "website": {
-   "checkedAt": "2026-11-24T23:58:43Z",
+   "checkedAt": "2026-11-25T04:18:38Z",
    "name": "Website (jgdesk.com)",
    "note": "",
    "state": "operational",
    "uptime30": {
-    "checks": 14,
+    "checks": 15,
     "percent": 100.0
    },
    "uptime90": {
-    "checks": 14,
+    "checks": 15,
     "percent": 100.0
    }
   }
@@ -85,11 +85,11 @@
    "to": "2026-11-24T02:19:35Z"
   }
  ],
- "generatedAt": "2026-11-24T23:58:43Z",
+ "generatedAt": "2026-11-25T04:18:38Z",
  "intervalHours": 3,
  "notMonitored": [
   "Agent worker"
  ],
- "overall": "unknown",
+ "overall": "operational",
  "staleAfterHours": 12
 }

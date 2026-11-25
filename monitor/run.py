@@ -41,7 +41,7 @@ COMPONENTS = {
     'worker': 'Agent worker',
 }
 # Components whose outage opens an incident. Others show on the page only.
-INCIDENT_COMPONENTS = ('website', 'access', 'application', 'database', 'directory')
+INCIDENT_COMPONENTS = ('website', 'access', 'application', 'database')
 
 # Fixed public notes. Private reason codes never reach the page.
 PUBLIC_NOTES = {
@@ -269,8 +269,8 @@ def main(argv=None, sleep=time.sleep, probe=checks.run_checks, store=None, clock
     previous_status = load_json(data / 'status.json', {})
     previous_states = {k: v['state'] for k, v in previous_status.get('components', {}).items()}
     history = read_history(data / 'history.jsonl')
-    known = [n for n in ('database', 'directory', 'worker') if n in previous_states]
-    config['app_components'] = tuple(known) or ('database', 'directory')
+    known = [n for n in ('database', 'worker') if n in previous_states]
+    config['app_components'] = tuple(known) or ('database',)
 
     started = clock()
     gap = record_gap(store, state, previous_status.get('generatedAt'), started, log)

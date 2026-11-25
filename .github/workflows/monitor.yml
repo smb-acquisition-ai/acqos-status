@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 12
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy-retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -69,6 +69,15 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
         if: github.event_name == 'schedule' || inputs.mode == 'check'
+        continue-on-error: true
+      # GitHub Pages intermittently fails with "Fetching artifact metadata
+      # failed" (seen twice on 2026-11-24). Wait and retry once.
+      - name: Wait before retrying Pages
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 60
+      - id: deploy-retry
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        if: steps.deploy.outcome == 'failure'
 
       - name: Synthetic outage and recovery
         if: inputs.mode == 'synthetic-test'

@@ -203,7 +203,7 @@ def check_application(health_url, client_id, client_secret, token, context=None)
 COMPONENT_STATES = {'ok': OPERATIONAL, 'fail': OUTAGE, 'disabled': UNKNOWN}
 
 
-def app_component(components, name, app_result, monitored=('database', 'directory')):
+def app_component(components, name, app_result, monitored=('database',)):
     """Map one app-reported component, or None when it is not monitored."""
     if components is None:
         return Result(UNKNOWN, 'application_unverified') if name in monitored else None
@@ -227,9 +227,10 @@ def run_checks(config, context=None):
     app, components = check_application(config.get('health_url'), config.get('client_id'),
                                         config.get('client_secret'), config.get('token'), context=context)
     results['application'] = app
-    for name in ('database', 'directory', 'worker'):
+    # The company directory is out of scope (Jose, 2026-11-24): never reported.
+    for name in ('database', 'worker'):
         component = app_component(components, name, app,
-                                  config.get('app_components') or ('database', 'directory'))
+                                  config.get('app_components') or ('database',))
         if component is not None:
             results[name] = component
     return results

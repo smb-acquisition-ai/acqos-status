@@ -39,8 +39,7 @@ class ClassificationTests(StubCase):
     def test_healthy(self):
         self.assertEqual(self.states(), {
             'website': ('operational', 'access_redirect'), 'access': ('operational', 'login_page_ok'),
-            'application': ('operational', 'health_ok'), 'database': ('operational', 'component_ok'),
-            'directory': ('operational', 'component_ok')})
+            'application': ('operational', 'health_ok'), 'database': ('operational', 'component_ok')})
 
     def test_login_page_alone_does_not_make_application_healthy(self):
         # Edge and login page answer while the tunnel is down.
@@ -237,6 +236,7 @@ class RunTests(StubCase):
         self.assertIn('Partnership database', html)
         self.assertIn('>Outage<', html)
         self.assertIn('Agent worker', html)  # listed under Not monitored, not as healthy
+        self.assertIn('<li>Company directory</li>', html)  # out of scope: not monitored
         self.assertNotIn('state-operational" data-state="operational"><div class="component-main"><span class="component-name">Agent worker', html)
 
 
